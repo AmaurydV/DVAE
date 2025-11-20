@@ -141,3 +141,60 @@ class DVAE_Generative(nn.Module):
             x_prev = mu_x
 
         return torch.cat(z_list, dim=1), torch.cat(x_list, dim=1)
+
+
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from model.RNNfig41 import DVAE_Generative   # adapte l'import à ton dossier
+
+# ==========================================================
+# 1) DATASET pour tes signaux
+# ==========================================================
+class SignalDataset(Dataset):
+    def __init__(self, X, U):
+        """
+        X : (N, T, x_dim)
+        U : (N, T, u_dim)
+        """
+        self.X = X
+        self.U = U
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.U[idx]
+
+# ==========================================================
+# 2) LOSS simple (MSE)
+# ==========================================================
+def reconstruction_loss(x_true, x_pred):
+    return nn.MSELoss()(x_pred, x_true)
+
+# ==========================================================
+# 3) TRAIN LOOP
+# ==========================================================
+def train(model, dataloader, optimizer, epochs=50, device="cuda"):
+    model.train()
+
+    for epoch in range(epochs):
+        total_loss = 0.0
+
+        for x, u in dataloader:
+            x = x.to(device)
+            u = u.to(device)
+
+            # forward (teacher forcing)
+            z_pred, x_pred = model(x, u)
+
+            # reconstruction loss
+            loss = reconstruction_loss(x, x_pred)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+        print(f"[Epoch {epoch+1}/{epochs}] Loss = {total_loss/len(dataloader):.6f}")
