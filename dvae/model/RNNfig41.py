@@ -146,25 +146,8 @@ class DVAE_Generative(nn.Module):
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from model.RNNfig41 import DVAE_Generative   # adapte l'import à ton dossier
 
-# ==========================================================
-# 1) DATASET pour tes signaux
-# ==========================================================
-class SignalDataset(Dataset):
-    def __init__(self, X, U):
-        """
-        X : (N, T, x_dim)
-        U : (N, T, u_dim)
-        """
-        self.X = X
-        self.U = U
 
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.U[idx]
 
 # ==========================================================
 # 2) LOSS simple (MSE)
