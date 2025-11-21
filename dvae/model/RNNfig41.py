@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class DVAE_Generative(nn.Module):
+class DVAE_GenerativeRNN1(nn.Module):
     """
     Implémentation EXACTE des équations (4.9)–(4.13)
     + prédiction + génération autonome
@@ -142,42 +142,3 @@ class DVAE_Generative(nn.Module):
 
         return torch.cat(z_list, dim=1), torch.cat(x_list, dim=1)
 
-
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-
-
-
-# ==========================================================
-# 2) LOSS simple (MSE)
-# ==========================================================
-def reconstruction_loss(x_true, x_pred):
-    return nn.MSELoss()(x_pred, x_true)
-
-# ==========================================================
-# 3) TRAIN LOOP
-# ==========================================================
-def train(model, dataloader, optimizer, epochs=50, device="cuda"):
-    model.train()
-
-    for epoch in range(epochs):
-        total_loss = 0.0
-
-        for x, u in dataloader:
-            x = x.to(device)
-            u = u.to(device)
-
-            # forward (teacher forcing)
-            z_pred, x_pred = model(x, u)
-
-            # reconstruction loss
-            loss = reconstruction_loss(x, x_pred)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()
-
-        print(f"[Epoch {epoch+1}/{epochs}] Loss = {total_loss/len(dataloader):.6f}")
