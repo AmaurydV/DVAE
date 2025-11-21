@@ -313,3 +313,49 @@ if __name__ == '__main__':
         return recon + KLD
 
     print(loss_function(y,x,mean,logvar,mean_prior,logvar)/6)
+
+
+
+    @torch.no_grad()
+    def encode(self, x):
+        """
+        Encode an input sequence x into latent variables z.
+        x: (seq_len, batch_size, x_dim)
+        returns:
+            z: (seq_len, batch_size, z_dim)
+            mu: (seq_len, batch_size, z_dim)
+            logvar: (seq_len, batch_size, z_dim)
+        """
+        seq_len, batch_size, _ = x.shape
+
+        # prepare holders
+        mu = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
+        logvar = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
+        z = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
+
+        # initial h and c
+        h_t = torch.zeros(self.num_RNN, batch_size, self.dim_RNN).to(self.device)
+        c_t = torch.zeros(self.num_RNN, batch_size, self.dim_RNN).to(self.device)
+
+        # feature extraction
+        feature_x = self.feature_extractor_x(x)
+
+        for t in range(seq_len):
+            feature_xt = feature_x[t,:,:].unsqueeze(0)  # (1,B,dim_x)
+            h_t_last = h_t[-1].unsqueeze(0)             # (1,B,dim_h)
+
+            # inference model: q(z_t | x_t, h_t)
+            mu_t, logvar_t = self.inference(feature_xt, h_t_last)
+            z_t = self.reparameterization(mu_t, logvar_t)
+
+            # store
+            mu[t] = mu_t.squeeze(0)
+            logvar[t] = logvar_t.squeeze(0)
+            z[t] = z_t.squeeze(0)
+
+            # update RNN
+            feature_zt = self.feature_extractor_z(z_t)
+            h_t, c_t = self.recurrence(feature_xt, feature_zt, h_t, c_t)
+
+        return z, mu, logvar
+
