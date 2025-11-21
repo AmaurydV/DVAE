@@ -291,31 +291,6 @@ class VRNN(nn.Module):
 
         return info
 
-
-if __name__ == '__main__':
-    x_dim = 513
-    z_dim = 16
-    device = 'cpu'
-    vrnn = VRNN(x_dim=x_dim, z_dim=z_dim).to(device)
-    model_info = vrnn.get_info()
-    # for i in model_info:
-    #     print(i)
-
-    x = torch.ones((2,513,3))
-    y, mean, logvar, mean_prior, logvar_prior, z = vrnn.forward(x)
-    def loss_function(recon_x, x, mu, logvar, mu_prior=None, logvar_prior=None):
-        if mu_prior is None:
-            mu_prior = torch.zeros_like(mu)
-        if logvar_prior is None:
-            logvar_prior = torch.zeros_like(logvar)
-        recon = torch.sum(  x/recon_x - torch.log(x/recon_x) - 1 ) 
-        KLD = -0.5 * torch.sum(logvar - logvar_prior - torch.div((logvar.exp() + (mu - mu_prior).pow(2)), logvar_prior.exp()))
-        return recon + KLD
-
-    print(loss_function(y,x,mean,logvar,mean_prior,logvar)/6)
-
-
-
     @torch.no_grad()
     def encode(self, x):
         """
@@ -358,4 +333,31 @@ if __name__ == '__main__':
             h_t, c_t = self.recurrence(feature_xt, feature_zt, h_t, c_t)
 
         return z, mu, logvar
+
+
+if __name__ == '__main__':
+    x_dim = 513
+    z_dim = 16
+    device = 'cpu'
+    vrnn = VRNN(x_dim=x_dim, z_dim=z_dim).to(device)
+    model_info = vrnn.get_info()
+    # for i in model_info:
+    #     print(i)
+
+    x = torch.ones((2,513,3))
+    y, mean, logvar, mean_prior, logvar_prior, z = vrnn.forward(x)
+    def loss_function(recon_x, x, mu, logvar, mu_prior=None, logvar_prior=None):
+        if mu_prior is None:
+            mu_prior = torch.zeros_like(mu)
+        if logvar_prior is None:
+            logvar_prior = torch.zeros_like(logvar)
+        recon = torch.sum(  x/recon_x - torch.log(x/recon_x) - 1 ) 
+        KLD = -0.5 * torch.sum(logvar - logvar_prior - torch.div((logvar.exp() + (mu - mu_prior).pow(2)), logvar_prior.exp()))
+        return recon + KLD
+
+    print(loss_function(y,x,mean,logvar,mean_prior,logvar)/6)
+
+
+
+
 
