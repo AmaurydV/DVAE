@@ -261,7 +261,7 @@ class VRNN(nn.Module):
             h_t, c_t = self.recurrence(feature_xt, feature_zt, h_t, c_t) # recurrence for t+1 
         self.z_mean_p, self.z_logvar_p  = self.generation_z(h)
         
-        return y if training else y, self.z
+        return y if training else (y, self.z)
 
         
     def get_info(self):
